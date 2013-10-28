@@ -41,6 +41,11 @@ func main() {
 	timeout := time.Duration(*timeout) * time.Second
 
 	shotgun, err := shotgun.New(uint(src), uint(dest), flag.Args(), *path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+		os.Exit(1)
+	}
+
 	shotgun.SetTimeout(timeout)
 	shotgun.Run()
 }
