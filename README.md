@@ -4,7 +4,7 @@ Lazy application loader for http application.
 
 ## Introduction
 
-There is already many **app reload** implementations, but most of these are watching **file-system changes**.
+There is already many **app reloader** implementations, but most of these are watching **file-system changes**.
 I usually use **auto save feature** on Emacs (with [auto-save-buffers-enhanced](https://github.com/kentaro/auto-save-buffers-enhanced)), so these reloader doesn't work expectedly in my environment.
 
 This loader is:
@@ -21,8 +21,8 @@ go-shotgun [options] command...
 
 Available options are:
 
-* `timeout`: timeout second for waiting application launch (Default 10)
-* `map`: port mapping for application (Default: 3000:5000, this means shotgun listen 3000 port and expect `command` uses 5000 port)
+* `timeout`: timeout second for waiting application launching (Default 10)
+* `map`: port mapping for application (Default: 3000:5000, this means shotgun listens 3000 port and expects `command` uses 5000 port)
 * `path`: path for watching filesystem changes
 
 ### Examples
@@ -51,6 +51,8 @@ Above works fine with plackup command for Perl web application.
 
 - [ ] Better console logs
 - [ ] If application failed to launch, or died unexpectedly, show these info to browser.
+- [ ] Terminate the app by clerner way
+- [ ] Spesify watching target files by (regexp?) rules
 
 ## Author
 
