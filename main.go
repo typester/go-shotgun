@@ -13,6 +13,7 @@ import (
 var (
 	portMap = flag.String("map", "3000:5000", "shotogun to app, port mapping")
 	timeout = flag.Uint("timeout", 10, "timeout sec to wait app's reload")
+	path    = flag.String("path", ".", "path for watching file-system changes")
 
 	portMapRule = regexp.MustCompile(`^([1-9][0-9]*?):([1-9][0-9]*?)$`)
 )
@@ -39,7 +40,7 @@ func main() {
 
 	timeout := time.Duration(*timeout) * time.Second
 
-	shotgun, err := shotgun.New(uint(src), uint(dest), flag.Args(), ".")
+	shotgun, err := shotgun.New(uint(src), uint(dest), flag.Args(), *path)
 	shotgun.SetTimeout(timeout)
 	shotgun.Run()
 }
