@@ -5,6 +5,10 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"time"
+
+	"fmt"
+	"syscall"
 )
 
 type Runner struct {
@@ -34,6 +38,36 @@ func (r *Runner) Kill() error {
 	return r.cmd.Process.Kill()
 }
 
+func (r *Runner) Terminate() error {
+	if r.cmd == nil || r.cmd.Process == nil {
+		return errors.New("Couldn't terminate process that is not running")
+	}
+
+	fmt.Printf("shutdown app...\n")
+
+	timeout := time.After(10 * time.Second)
+	quit := make(chan bool)
+
+	go func() {
+		r.cmd.Process.Wait()
+		quit <- true
+	}()
+
+	err := r.cmd.Process.Signal(syscall.SIGTERM)
+	if err != nil {
+		return err
+	}
+
+	select {
+	case <-timeout:
+		fmt.Fprintf(os.Stderr, "timeout waiting process end, nowforce Kill it\n")
+		err = r.Kill()
+	case <-quit:
+	}
+
+	return err
+}
+
 func (r *Runner) SetNeedRestart() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -52,7 +86,7 @@ func (r *Runner) CheckRestart() error {
 
 	if r.needRestart {
 		r.needRestart = false
-		r.Kill()
+		r.Terminate()
 		return r.Start()
 	}
 

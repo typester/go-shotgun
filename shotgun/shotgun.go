@@ -42,8 +42,6 @@ func (s *Shotgun) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u.Host = s.cmdAddr
 	u.Scheme = "http"
 
-	fmt.Printf("url: %+v\n", u)
-
 	s.runner.CheckRestart()
 
 	req, err := http.NewRequest(r.Method, u.String(), r.Body)
@@ -53,44 +51,52 @@ func (s *Shotgun) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Header = r.Header
 
+	type Result struct {
+		response *http.Response
+		error    error
+	}
+
 	timeout := time.After(s.timeout)
-	result := make(chan *http.Response)
+	result := make(chan *Result)
 
 	go func() {
+		var last_error error
 		for {
 			select {
 			case <-timeout:
-				result <- nil
+				result <- &Result{nil, last_error}
 				return
 			default:
 			}
 
 			res, err := http.DefaultClient.Do(req)
 			if err != nil {
-				fmt.Println("http error: ", err)
+				last_error = err
+				time.Sleep(time.Millisecond * 10)
 				continue
 			}
 
-			result <- res
+			result <- &Result{res, nil}
 		}
 	}()
 
 	res := <-result
 
-	if res == nil {
+	if res.response == nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", res.error.Error())
 		w.Write([]byte("timeout"))
 		return
 	}
 
-	defer res.Body.Close()
+	defer res.response.Body.Close()
 
-	for k, v := range res.Header {
+	for k, v := range res.response.Header {
 		for _, p := range v {
 			w.Header().Add(k, p)
 		}
 	}
-	w.WriteHeader(res.StatusCode)
-	io.Copy(w, res.Body)
+	w.WriteHeader(res.response.StatusCode)
+	io.Copy(w, res.response.Body)
 }
 
 func (s *Shotgun) Run() error {
@@ -108,7 +114,6 @@ func (s *Shotgun) Run() error {
 				s.runner.SetNeedRestart()
 			case err := <-w.Error:
 				fmt.Fprintf(os.Stderr, "fs error: %s\n", err)
-				os.Exit(1)
 			}
 		}
 	}()
