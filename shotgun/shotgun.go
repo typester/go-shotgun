@@ -42,7 +42,11 @@ func (s *Shotgun) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u.Host = s.cmdAddr
 	u.Scheme = "http"
 
-	s.runner.CheckRestart()
+	err := s.runner.CheckRestart()
+	if err != nil {
+		fmt.Println("restart failed: ", err)
+		return
+	}
 
 	req, err := http.NewRequest(r.Method, u.String(), r.Body)
 	if err != nil {
