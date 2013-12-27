@@ -49,9 +49,7 @@ Above works fine with plackup command for Perl web application.
 
 ## TODO
 
-- [ ] Better console logs
-- [ ] If application failed to launch, or died unexpectedly, show these info to browser.
-- [ ] Terminate the app by clerner way
+- [ ] Terminate the app by cleaner way
 - [ ] Spesify watching target files by (regexp?) rules
 - [ ] Tests
 
