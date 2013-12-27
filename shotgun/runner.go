@@ -2,12 +2,10 @@ package shotgun
 
 import (
 	"errors"
-	"os"
+	"log"
 	"os/exec"
 	"sync"
 	"time"
-
-	"fmt"
 )
 
 type Runner struct {
@@ -35,7 +33,7 @@ func (r *Runner) Terminate() error {
 		return errors.New("Couldn't terminate process that is not running")
 	}
 
-	fmt.Printf("shutdown app...\n")
+	log.Println("shutdown app...")
 
 	timeout := time.After(10 * time.Second)
 	quit := make(chan bool)
@@ -54,7 +52,7 @@ func (r *Runner) Terminate() error {
 
 	select {
 	case <-timeout:
-		fmt.Fprintf(os.Stderr, "timeout waiting process end, nowforce Kill it\n")
+		log.Println("timeout waiting process end, nowforce Kill it")
 		err = r.Kill()
 	case <-quit:
 	}

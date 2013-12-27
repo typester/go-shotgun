@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/romanoff/fsmonitor"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 )
 
@@ -37,6 +37,7 @@ func (s *Shotgun) SetTimeout(timeout time.Duration) {
 }
 
 func (s *Shotgun) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var message string
 	u := new(url.URL)
 	*u = *(r.URL)
 	u.Host = s.cmdAddr
@@ -44,13 +45,17 @@ func (s *Shotgun) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err := s.runner.CheckRestart()
 	if err != nil {
-		fmt.Println("restart failed: ", err)
+		message = fmt.Sprintf("restart failed: %v", err)
+		log.Println(message)
+		http.Error(w, message, http.StatusBadGateway)
 		return
 	}
 
 	req, err := http.NewRequest(r.Method, u.String(), r.Body)
 	if err != nil {
-		fmt.Println("new request failed: ", err)
+		message = fmt.Sprintf("new request failed: %v", err)
+		log.Println(message)
+		http.Error(w, message, http.StatusBadGateway)
 		return
 	}
 	req.Header = r.Header
@@ -87,8 +92,9 @@ func (s *Shotgun) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	res := <-result
 
 	if res.response == nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", res.error.Error())
-		w.Write([]byte("timeout"))
+		message = fmt.Sprintf(res.error.Error())
+		log.Println(message)
+		http.Error(w, message, http.StatusBadGateway)
 		return
 	}
 
@@ -117,7 +123,7 @@ func (s *Shotgun) Run() error {
 			case <-w.Event:
 				s.runner.SetNeedRestart()
 			case err := <-w.Error:
-				fmt.Fprintf(os.Stderr, "fs error: %s\n", err)
+				log.Printf("fs error: %s\n", err)
 			}
 		}
 	}()
