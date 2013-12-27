@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"fmt"
-	"syscall"
 )
 
 type Runner struct {
@@ -27,13 +26,6 @@ func NewRunner(cmd []string) (*Runner, error) {
 	return &Runner{command: cmd[0], args: cmd[1:]}, nil
 }
 
-func (r *Runner) Start() error {
-	r.cmd = exec.Command(r.command, r.args...)
-	r.cmd.Stdout = os.Stdout
-	r.cmd.Stderr = os.Stderr
-	return r.cmd.Start()
-}
-
 func (r *Runner) Kill() error {
 	return r.cmd.Process.Kill()
 }
@@ -49,11 +41,13 @@ func (r *Runner) Terminate() error {
 	quit := make(chan bool)
 
 	go func() {
-		r.cmd.Process.Wait()
+		if r.cmd.Process != nil {
+			r.cmd.Process.Wait()
+		}
 		quit <- true
 	}()
 
-	err := r.cmd.Process.Signal(syscall.SIGTERM)
+	err := r.Signal()
 	if err != nil {
 		return err
 	}
@@ -86,7 +80,10 @@ func (r *Runner) CheckRestart() error {
 
 	if r.needRestart {
 		r.needRestart = false
-		r.Terminate()
+		err := r.Terminate()
+		if err != nil {
+			return err
+		}
 		return r.Start()
 	}
 
