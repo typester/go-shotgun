@@ -5,6 +5,7 @@ package shotgun
 import (
 	"os"
 	"os/exec"
+	"syscall"
 )
 
 func (r *Runner) Start() error {
